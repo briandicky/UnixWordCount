@@ -18,11 +18,11 @@
 
 int main(int argc, char *argv[])
 {
-    //FILE *fp;
-    //int charcount = 0, wordcount = 0, linecount = 0;
+    FILE *fp = NULL;
+    int charcount = 0, wordcount = 0, linecount = 0;
     int charflag = 0, wordflag = 0, lineflag = 0;
-    //char input[512];
-    int i;
+    char input[512];
+    int i, inword = 0;
 
 
     /*Set the flags which is used to judge options that user typed.*/
@@ -53,17 +53,45 @@ int main(int argc, char *argv[])
             wordflag = 1; 
             charflag = 1;
         }
-        else {
-            lineflag = 1;
-            wordflag = 1;
-            charflag = 1;
-        }
-        
     }
-    
+
+    /*Flags' content*/
     debug_print(lineflag);
     debug_print(wordflag);
     debug_print(charflag);
+    /*End*/
+    
+    /*Open file*/
+    fp = fopen(argv[2], "r");
+
+    if(fp) {
+        /*Try to count the details in file(fp).*/
+        while( fgets(input, sizeof(input), fp) != NULL ) {
+            /*Increase line counter*/
+            linecount++;
+
+            for(i = 0 ; i < strlen(input) ; i++) {
+                /*Increase word counter*/
+                if( !inword ) {
+                    inword = 1;
+                    wordcount++;
+                }
+                
+                if( input[i] == 32 || input[i] == 10 ) // ASCII: space = 32, newline = 10
+                    inword = 0;
+                
+                /*Increase char counter*/
+                charcount++;
+            }
+        }
+        printf(" %d %d %d %s\n", linecount, wordcount, charcount, argv[2]);
+    }
+    else {
+        /*Error messages*/
+        printf("ERROR: File not found.\n");
+    }
+
+    fclose(fp);
 
     return 0;
 }
