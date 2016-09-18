@@ -9,23 +9,32 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#define __DEBUG__ 666
-
 #ifdef __DEBUG__
 #define debug_print(x) printf("%s = %d\n", #x, (x)); 
 #else
 #define debug_print(x)
 #endif
 
-
 typedef unsigned long count_t;
 
 static void usage() {
-    fprintf(stderr, "usage: wc [OPTIONS] FILE...\n\n");
+    fprintf(stderr, "Try 'wc --help' for more information.\n");
+    /*fprintf(stderr, "usage: wc [OPTIONS] FILE...\n\n");
     fprintf(stderr, "  -c      Output character count\n");
     fprintf(stderr, "  -l      Output line count\n");
-    fprintf(stderr, "  -w      Output word count\n");
+    fprintf(stderr, "  -w      Output word count\n");*/
     exit(1);
+}
+
+int calc(int charcount) {
+    int n = 0;
+
+    while( charcount != 0 ) {
+        charcount /= 10;
+        n++;
+    }
+
+    return n;
 }
 
 
@@ -33,23 +42,24 @@ int main(int argc, char *argv[])
 {
     FILE *fp = NULL;
     count_t charcount = 0, wordcount = 0, linecount = 0;
-    int charflag = 0, wordflag = 0, lineflag = 0;
+    count_t charflag = 0, wordflag = 0, lineflag = 0;
     char input[1024], filename[256];
-    int i, inword = 0;
-    int c;
+    int i;
+    /*c: for calculating char, sum: for command options*/
+    int c, sum, ndigit, inword;
 
-    /*Set the flags which is used to judge options that user typed.*/
+    /*Parse cmd line options and set the flags which is used to judge options that user typed.*/
     while( (c = getopt( argc, argv, "lwc" )) != EOF ) {
         switch(c) {
-            case 'l':
-                lineflag = 1;
+            case 'l': /*Dex(4) = Bin(100)*/
+                lineflag = 4;
                 break;
                 
-            case 'w':
-                wordflag = 1;
+            case 'w': /*Dex(2) = Bin(010)*/
+                wordflag = 2;
                 break;
 
-            case 'c':
+            case 'c': /*Dex(1) = Bin(001)*/
                 charflag = 1;
                 break;
 
@@ -63,13 +73,20 @@ int main(int argc, char *argv[])
     debug_print(wordflag);
     debug_print(charflag);
     /*End*/
+
+    /*Sum all flags*/
+    sum = 0;
+    sum = lineflag+wordflag+charflag;
     
     /*Open file*/
-    for( i = 1 ; i < argc ; i++ ) 
+    for( i = 1 ; i < argc ; i++ ) {
         if( !strncmp( argv[i], "-", 1 ) == 0 ) {
             fp = fopen(argv[i], "r");
             strcpy(filename, argv[i]);
         }
+    }
+
+    inword = 0;
 
     if(fp) {
         /*Try to count the details in file(fp).*/
@@ -91,12 +108,35 @@ int main(int argc, char *argv[])
                 charcount++;
             }
         }
-        printf("%lu %lu %lu %s\n", linecount, wordcount, charcount, filename);
+
+        /*Calculate the total digits, which we need, according to charcount*/
+        ndigit = calc(charcount);
+        debug_print(ndigit);
+
+        /*According to command options, print the information*/
+        if( sum == 7 || sum == 0 ) /*l+w+c = 4+2+1 = 7*/
+            printf("%*lu %*lu %*lu %s\n", ndigit, linecount, ndigit, wordcount, ndigit, charcount, filename);
+        else if( sum == 6 ) /*l+w = 4+2 = 6 */
+            printf("%*lu %*lu %s\n", ndigit, linecount, ndigit, wordcount, filename);
+        else if( sum == 5 ) /*l+c = 4+1 = 5*/
+            printf("%*lu %*lu %s\n", ndigit, linecount, ndigit, charcount, filename);
+        else if( sum == 3 ) /*w+c = 2+1 = 3*/
+            printf("%*lu %*lu %s\n", ndigit, wordcount, ndigit, charcount, filename);
+        else if( sum == 4 ) /*l = 4*/
+            printf("%lu %s\n", linecount, filename);
+        else if( sum == 2 ) /*w = 2*/
+            printf("%lu %s\n", wordcount, filename);
+        else if( sum == 1 ) /*c = 1*/
+            printf("%lu %s\n", charcount, filename);
+        else
+            fprintf(stderr, "Wrong options.");
+
         fclose(fp);
     }
     else {
         /*Error messages*/
-        printf("ERROR: File not found.\n");
+        printf("%s: No such file or directory\n", filename);
+        exit(1);
     }
 
     return 0;
