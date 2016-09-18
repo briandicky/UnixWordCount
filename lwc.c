@@ -8,20 +8,22 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define DEBUG 666
 
-#ifdef DEBUG
-#define debug_print(x) printf("%s = %d\n", #x, (x)) 
+#ifdef __DEBUG__
+#define debug_print(x) printf("%s = %d\n", #x, (x)); 
 #else
-#define debug_print do{}while(0)
+#define debug_print do{}while(0);
 #endif
+
+
+typedef unsigned long count_t;
 
 int main(int argc, char *argv[])
 {
     FILE *fp = NULL;
-    int charcount = 0, wordcount = 0, linecount = 0;
+    count_t charcount = 0, wordcount = 0, linecount = 0;
     int charflag = 0, wordflag = 0, lineflag = 0;
-    char input[512];
+    char input[1024];
     int i, inword = 0;
 
 
@@ -72,26 +74,25 @@ int main(int argc, char *argv[])
 
             for(i = 0 ; i < strlen(input) ; i++) {
                 /*Increase word counter*/
-                if( !inword ) {
+                if( !inword && !( input[i] == 32 || input[i] == 10 ) ) {
                     inword = 1;
                     wordcount++;
                 }
                 
-                if( input[i] == 32 || input[i] == 10 ) // ASCII: space = 32, newline = 10
+                if( input[i] == 32 || input[i] == 10 ) // ASCII: space = 32, newline = 10. 
                     inword = 0;
                 
                 /*Increase char counter*/
                 charcount++;
             }
         }
-        printf(" %d %d %d %s\n", linecount, wordcount, charcount, argv[2]);
+        printf(" %lu %lu %lu %s\n", linecount, wordcount, charcount, argv[2]);
+        fclose(fp);
     }
     else {
         /*Error messages*/
         printf("ERROR: File not found.\n");
     }
-
-    fclose(fp);
 
     return 0;
 }
