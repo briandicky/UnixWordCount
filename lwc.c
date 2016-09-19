@@ -22,6 +22,7 @@ struct stats {
     count_t words;
     count_t chars;
     char filename[256];
+    int null;
 };
 
 static void usage() {
@@ -51,6 +52,9 @@ int main(int argc, char *argv[])
     /*c: for calculating char, sum: for command options*/
     int c, sum, ndigit, inword;
     struct stats total; /*For multiple files*/
+    struct stats wcfile[100];
+    int k = 0;
+
 
     /*Parse cmd line options and set the flags which is used to judge options that user typed.*/
     while( (c = getopt( argc, argv, "lwc?" )) != EOF ) {
@@ -120,40 +124,100 @@ int main(int argc, char *argv[])
                 }
             }
 
+            /*Record all the output messages*/
+            wcfile[k].lines = linecount;
+            wcfile[k].words = wordcount;
+            wcfile[k].chars = charcount;
+            wcfile[k].null = 0;
+            strcpy(wcfile[k].filename, filename);
+            k++;
+            debug_print(k);
+
+            /*Sum up all lines/words/chars*/
             total.lines += linecount;
             total.words += wordcount;
             total.chars += charcount;
-
-            /*Calculate the total digits, which we need, according to charcount*/
-            ndigit = calc(total.chars);
-            debug_print(ndigit);
-
-            /*According to command options, print the information*/
-            if( sum == 7 || sum == 0 ) /*l+w+c = 4+2+1 = 7*/
-                printf("%*lu %*lu %*lu %s\n", ndigit, linecount, ndigit, wordcount, ndigit, charcount, filename);
-            else if( sum == 6 ) /*l+w = 4+2 = 6 */
-                printf("%*lu %*lu %s\n", ndigit, linecount, ndigit, wordcount, filename);
-            else if( sum == 5 ) /*l+c = 4+1 = 5*/
-                printf("%*lu %*lu %s\n", ndigit, linecount, ndigit, charcount, filename);
-            else if( sum == 3 ) /*w+c = 2+1 = 3*/
-                printf("%*lu %*lu %s\n", ndigit, wordcount, ndigit, charcount, filename);
-            else if( sum == 4 ) /*l = 4*/
-                printf("%lu %s\n", linecount, filename);
-            else if( sum == 2 ) /*w = 2*/
-                printf("%lu %s\n", wordcount, filename);
-            else if( sum == 1 ) /*c = 1*/
-                printf("%lu %s\n", charcount, filename);
-            else
-                fprintf(stderr, "Wrong options.");
 
             charcount = wordcount = linecount = 0;
             fclose(fp);
         }
         else {
-            /*Error messages*/
-            printf("%s: No such file or directory\n", filename);
+            /*Null file pointer*/
+            wcfile[k].null = 1;
+            strcpy(wcfile[k].filename, filename);
+            k++;
+            debug_print(k);
         }
     } 
 
-    return 0;
+    /*Calculate the total digits, which we need, according to charcount*/
+    if( k > 1) {
+        ndigit = calc(total.chars);
+        debug_print(ndigit);
+    }
+    else {
+        ndigit = calc(wcfile[0].chars);
+        debug_print(ndigit);
+    }
+
+    /*Print the output*/
+    for( i = 0 ; i < k ; i++) {
+        if( wcfile[i].null ) {
+            /*Error messages*/
+            printf("lwc: %s: No such file or directory\n", filename);
+            continue;
+        }
+                                                                                                                                          
+        /*According to command options, print the information*/
+        if( sum == 7 || sum == 0 ) /*l+w+c = 4+2+1 = 7*/
+            printf("%*lu %*lu %*lu %s\n", ndigit, wcfile[i].lines, ndigit, wcfile[i].words, ndigit, wcfile[i].chars, wcfile[i].filename);
+        else if( sum == 6 ) /*l+w = 4+2 = 6 */
+            printf("%*lu %*lu %s\n", ndigit, wcfile[i].lines, ndigit, wcfile[i].words, wcfile[i].filename);
+        else if( sum == 5 ) /*l+c = 4+1 = 5*/
+            printf("%*lu %*lu %s\n", ndigit, wcfile[i].lines, ndigit, wcfile[i].chars, wcfile[i].filename);
+        else if( sum == 3 ) /*w+c = 2+1 = 3*/
+            printf("%*lu %*lu %s\n", ndigit, wcfile[i].words, ndigit, wcfile[i].chars, wcfile[i].filename);
+        else if( sum == 4 ) /*l = 4*/ {
+            if( k > 1)
+                printf("%*lu %s\n", ndigit, wcfile[i].lines, wcfile[i].filename);
+            else
+                printf("%lu %s\n", wcfile[i].lines, wcfile[i].filename);
+        }
+        else if( sum == 2 ) /*w = 2*/ {
+            if( k > 1 )
+                printf("%*lu %s\n", ndigit, wcfile[i].words, wcfile[i].filename);
+            else
+                printf("%lu %s\n", wcfile[i].words, wcfile[i].filename);
+        }
+        else if( sum == 1 ) /*c = 1*/ {
+            if( k > 1 )
+                printf("%*lu %s\n", ndigit, wcfile[i].chars, wcfile[i].filename);
+            else
+                printf("%lu %s\n", wcfile[i].chars, wcfile[i].filename);
+        }
+        else
+            fprintf(stderr, "Wrong options.");
+    }
+
+
+    if( k > 1 ) {
+        if( sum == 7 || sum == 0 ) /*l+w+c = 4+2+1 = 7*/                                                            
+            printf("%*lu %*lu %*lu %s\n", ndigit, total.lines, ndigit, total.words, ndigit, total.chars, "total");
+        else if( sum == 6 ) /*l+w = 4+2 = 6 */
+            printf("%*lu %*lu %s\n", ndigit, total.lines, ndigit, total.words, "total");
+        else if( sum == 5 ) /*l+c = 4+1 = 5*/
+            printf("%*lu %*lu %s\n", ndigit, total.lines, ndigit, total.chars, "total");
+        else if( sum == 3 ) /*w+c = 2+1 = 3*/
+            printf("%*lu %*lu %s\n", ndigit, total.words, ndigit, total.chars, "total");
+        else if( sum == 4 ) /*l = 4*/
+            printf("%*lu %s\n", ndigit, total.lines, "total");
+        else if( sum == 2 ) /*w = 2*/
+            printf("%*lu %s\n", ndigit, total.words, "total");
+        else if( sum == 1 ) /*c = 1*/
+            printf("%*lu %s\n", ndigit, total.chars, "total");
+        else
+            fprintf(stderr, "Wrong options.");
+    }
+    
+    return 0;  
 }
