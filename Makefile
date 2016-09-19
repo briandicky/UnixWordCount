@@ -1,5 +1,5 @@
 CC = gcc
-override CFLAGS = -c -Wall -O2
+override CFLAGS += -c -Wall -O2
 LDFLAGS =
 SOURCES = lwc.c
 OBJ = $(SOURCES:.c=.o)
@@ -21,7 +21,7 @@ clean:
 
 DEBUG:
 	@echo "Debugger mode, type this to compile your code:"
-	@echo 'make clean CFLAGS+="-D __DEBUG__ all"'
+	@echo 'make clean CFLAGS+="-D __DEBUG__" all'
 
 help:
 	@echo "This is makefile command information:"
