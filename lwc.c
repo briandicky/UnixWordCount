@@ -54,6 +54,7 @@ int main(int argc, char *argv[])
     struct stats total; /*For multiple files*/
     struct stats wcfile[100];
     int k = 0;
+    int invalid_detector = 0;
 
 
     /*Parse cmd line options and set the flags which is used to judge options that user typed.*/
@@ -106,9 +107,6 @@ int main(int argc, char *argv[])
         if(fp) {
             /*Try to count the details in file(fp).*/
             while( fgets(input, sizeof(input), fp) != NULL ) {
-                /*Increase line counter*/
-                linecount++;
-
                 for(j = 0 ; j < strlen(input) ; j++) {
                     /*Increase word counter*/
                     if( !inword && !( input[j] == 32 || input[j] == 10 || input[j] == 9 || input[j] == 13 ) ) {
@@ -119,6 +117,10 @@ int main(int argc, char *argv[])
                     if( input[j] == 32 || input[j] == 10 || input[j] == 9 || input[j] == 13 ) // ASCII: space = 32, newline = 10, tab = 9. carriage return = 13. 
                         inword = 0;
                             
+                    /*Increase line counter*/
+                    if( input[j] == 10 )
+                        linecount++;
+
                     /*Increase char counter*/
                     charcount++;
                 }
@@ -164,7 +166,8 @@ int main(int argc, char *argv[])
     for( i = 0 ; i < k ; i++) {
         if( wcfile[i].null ) {
             /*Error messages*/
-            printf("lwc: %s: No such file or directory\n", filename);
+            fprintf(stderr, "wc: %s: No such file or directory\n", filename);
+            invalid_detector = 1;
             continue;
         }
                                                                                                                                           
@@ -219,5 +222,5 @@ int main(int argc, char *argv[])
             fprintf(stderr, "Wrong options.");
     }
     
-    return 0;  
+    return invalid_detector;  
 }
